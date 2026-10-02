@@ -27,11 +27,3 @@ Spatial (primary): CosMx 1,000-plex human liver (Bruker Spatial Biology).
 Spatial (secondary): CosMx 6,000-plex human liver (in-house).
 Markers: Human Protein Atlas Single Cell Type Atlas (Karlsson et al., 2021).
 
-Tools
-R / Seurat
-High-performance computing (BlueBEAR, University of Birmingham)
-Repository structure
-├── scripts/        # analysis scripts (processing, annotation, validation)
-├── data/           # input marker sets and comparison tables
-├── plots/          # figures (UMAPs, dot plots, correlation plots)
-└── results/        # output tables (marker verdicts, failed-marker stats)
