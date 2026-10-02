@@ -14,10 +14,10 @@
 #      final validated marker set
 #
 # Platform: Seurat (v5) on the BlueBEAR HPC service, University of Birmingham
-# =============================================================================
 
 
-# ---- Libraries --------------------------------------------------------------
+
+# Libraries 
 library(dplyr)
 library(Seurat)
 library(patchwork)
@@ -35,9 +35,9 @@ devtools::install_github("immunogenomics/presto")
 options(bitmapType = "cairo")
 
 
-# =============================================================================
+
 # 1. LOAD DATA
-# =============================================================================
+
 
 # Clear any existing objects from a previous run
 rm(liv, liv.data)
@@ -58,9 +58,8 @@ downloaded_markers_filepath <- "/rds/projects/g/gilberts-spatial-biology-image-a
 downloaded_markers <- read.csv(downloaded_markers_filepath)
 
 
-# =============================================================================
 # 2. QUALITY CONTROL
-# =============================================================================
+
 
 # Percentage of mitochondrial reads per cell (high = low-quality/dying cells)
 liv[["percent.mt"]] <- PercentageFeatureSet(liv, pattern = "^MT-")
@@ -96,9 +95,8 @@ cat("Cells before QC:",
 cat("Cells after QC:", ncol(liv), "\n")
 
 
-# =============================================================================
 # 3. NORMALISATION, FEATURE SELECTION, SCALING, PCA
-# =============================================================================
+
 
 # Log-normalise the counts
 liv <- NormalizeData(liv, normalization.method = "LogNormalize", scale.factor = 10000)
@@ -130,10 +128,8 @@ DimHeatmap(liv, dims = 1:15, cells = 500, balanced = TRUE)
 # Elbow plot: used to decide how many PCs to retain
 ElbowPlot(liv)
 
-
-# =============================================================================
 # 4. CLUSTERING AND UMAP
-# =============================================================================
+
 
 # Build the shared nearest-neighbour graph (first 15 PCs)
 liv <- FindNeighbors(liv, dims = 1:15)
@@ -163,9 +159,8 @@ Idents(liv) <- "RNA_snn_res.0.3"
 head(Idents(liv), 5)
 
 
-# =============================================================================
 # 5. MARKER EXPLORATION BY LINEAGE (pre-filtering)
-# =============================================================================
+
 # Inspect HPA candidate markers visually, grouped by cell type, before applying
 # any quantitative thresholds.
 
@@ -287,9 +282,8 @@ for(ct in names(marker_list)){
 }
 
 
-# =============================================================================
 # 6. DIFFERENTIAL EXPRESSION: MARKER SCORING (log2FC, pct, AUC)
-# =============================================================================
+
 
 # Positive markers for every cluster (Wilcoxon, default thresholds)
 liv.markers <- FindAllMarkers(liv, only.pos = TRUE)
@@ -301,7 +295,7 @@ saveRDS(liv, "liver_runthrough_seurat.rds")
 file.info("liver_runthrough_seurat.rds")$size
 test <- readRDS("liver_runthrough_seurat.rds"); rm(test)
 
-# ---- AUC (ROC) scoring of the HPA markers -----------------------------------
+# AUC (ROC) scoring of the HPA markers
 # Re-run per cluster using the ROC test to obtain AUC (classification power)
 liv <- readRDS("liver_runthrough_seurat.rds")
 Idents(liv) <- "RNA_snn_res.0.3"
@@ -343,10 +337,7 @@ auc_table <- liv.markers.roc %>%
 write.csv(auc_table, file.path(base_out, "HPA_markers_AUC_full.csv"), row.names = FALSE)
 
 
-# =============================================================================
 # 7. AUC THRESHOLD SENSITIVITY
-# =============================================================================
-# Explore how many markers are retained as the AUC cutoff is made stricter.
 
 total_markers <- nrow(liv.markers.roc)
 auc_thresholds <- c(0.5, 0.6, 0.7, 0.8, 0.9)
@@ -381,9 +372,8 @@ ggsave(file.path(base_out, "plots", "AUC_markers_retained.png"),
        auc_retention_plot, width = 8, height = 6)
 
 
-# =============================================================================
 # 8. COMBINED FEATURE & VIOLIN PLOTS FOR AUC-PASSING MARKERS
-# =============================================================================
+
 # For each cluster, plot the markers passing an AUC cutoff, annotated with AUC.
 
 library(patchwork)
@@ -435,9 +425,7 @@ for(cl in sort(unique(auc_pass$cluster))){
 }
 
 
-# =============================================================================
 # 9. SELECTED MARKER FEATURE / VIOLIN PLOTS (for figures)
-# =============================================================================
 # Curated per-lineage plots of the chosen marker genes, for presentation.
 
 # ---- Feature plots ----
@@ -494,10 +482,8 @@ vln_plot <- VlnPlot(liv, features = c("CDH5","CLEC14A","KDR","FLT1","ERG"),
 ggsave("/rds/projects/g/gilberts-spatial-biology-image-analysis/ABI000_SingleCellMarkerTesting/2026_GAdams/liver/plots/reason for using specific markers/vln_endothelial_cells.png",
        plot = vln_plot, width = 16, height = 8, limitsize = FALSE)
 
-
-# =============================================================================
 # 10. MANUAL CLUSTER ANNOTATION
-# =============================================================================
+
 
 Idents(liv) <- "RNA_snn_res.0.3"
 
@@ -547,10 +533,7 @@ ggsave("/rds/projects/g/gilberts-spatial-biology-image-analysis/ABI000_SingleCel
        plot = myeloid_plot, width = 12, height = 7)
 saveRDS(liv, file = "liver_runthrough_seurat.rds")
 
-
-# =============================================================================
 # 11. VALIDATED-MARKER DOT PLOTS BY BROAD LINEAGE
-# =============================================================================
 
 # Load the final validated marker set (gene + cell_type)
 keepers <- read.csv("sc_liver_markers_final.csv")
@@ -612,9 +595,8 @@ ggsave("/rds/projects/g/gilberts-spatial-biology-image-analysis/ABI000_SingleCel
        dpB, width = 9, height = 5, dpi = 300)
 
 
-# =============================================================================
 # 12. ZOOMED UMAPs (B/plasma and myeloid subpopulations)
-# =============================================================================
+
 
 # Report subcluster centres (for positioning annotation labels)
 emb <- Embeddings(liv, "umap")
@@ -702,10 +684,7 @@ combined <- myeloid_zoom + bplasma_zoom +
   )
 ggsave("UMAP_zoom_combined.png", combined, width = 14, height = 6, dpi = 300)
 
-
-# =============================================================================
 # 13. CELL-TYPE COMPOSITION BAR PLOT
-# =============================================================================
 
 library(ggplot2); library(dplyr); library(scales)
 
@@ -725,6 +704,3 @@ p_sc <- ggplot(sc_counts, aes(cell_type, count, fill = cell_type)) +
         legend.position = "none")
 ggsave("SC_cellcount_bar.png", p_sc, width = 6, height = 5, dpi = 300)
 
-# =============================================================================
-# END
-# =============================================================================
